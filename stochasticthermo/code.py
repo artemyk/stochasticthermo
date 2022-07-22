@@ -1,13 +1,15 @@
 import numpy as np
 
 def get_stationary(W): 
-    # get stationary distribution of rate matrix W
-    evec, evals = np.linalg.eig(W.T)
+    assert(np.allclose(W.sum(axis=0),0))
+
+    # get stationary distribution of rate matrix W. W[i,j] is transition rate from j->i
+    evec, evals = np.linalg.eig(W)
     evec1ix     = np.isclose(evec,0)
     if not (sum(evec1ix)==1):
         raise Exception('# of eigenvalue=0 eigenvector is not 1. %s' % str(evec))
         
-    st          = evals[:,evec1ix]
+    st          = np.ravel(evals[:,evec1ix])
     assert(np.allclose(np.imag(st), 0))
     st          = np.real(st)
     st         /= st.sum()
@@ -15,8 +17,23 @@ def get_stationary(W):
     if not np.all(st>=0):
         raise Exception('Some stationary probabilities are negative %s' % str(st))
         
-    assert(np.allclose(W.T.dot(st),0))
+    assert(np.allclose(W @ st,0))
     return st
+
+
+# def get_st(R):
+#     evals, evecs = scipy.linalg.eig(R)
+#     ixs          = np.flatnonzero(np.isclose(evals,0,atol=1e-6))
+#     if len(ixs) != 1: raise Exception()
+#     p  = evecs[:,ixs[0]]
+#     if not np.allclose(R.dot(p),0)  : raise Exception()
+#     if not np.allclose(np.imag(p),0): raise Exception()
+#     p  = np.real(p)
+#     p /= p.sum()
+#     return p
+
+
+
 
 
 def get_random_ratematrix(N,p, exp=1):
@@ -25,16 +42,16 @@ def get_random_ratematrix(N,p, exp=1):
     W = np.random.random((N,N))**exp  # make distribution fatter tailed
     np.fill_diagonal(W,0)
     
-    fluxes = W.T*p[None,:]    
+    fluxes = W*p[None,:]    
     W     /= fluxes.sum()                    # normalize activity to 1
-    W     -= np.diag(W.sum(axis=1))
+    W     -= np.diag(W.sum(axis=0))
     return W
 
 
 def get_epr(W,p): 
     # get entropy production rate incurred by rate matrix W on distribution
     N   = len(p)
-    fluxes = W.T*p[None,:]
+    fluxes = W*p[None,:]
     r   = 0
     for i in range(N):
         for j in range(N):
@@ -47,7 +64,7 @@ def get_epr_ex_hs(W,p):
     # Calculate nonadiabatic (excess) EP rate of Hatano-Sasa
     # W is rate matrix, p is distribution over states p(x)
 
-    dp = W.T.dot(p)
+    dp = W.dot(p)
     st = np.ravel(get_stationary(W))
     return -dp.dot(np.log(p/st))
 
@@ -69,7 +86,7 @@ def get_epr_ex_ons(W,p, S=None):
                     S[i,i*N+j] =  1
                     S[j,i*N+j] = -1
 
-    fluxes = W.T*p[None,:]   # fluxes[j,i] is flux from i to j
+    fluxes = W*p[None,:]   # fluxes[j,i] is flux from i to j
     np.fill_diagonal(fluxes, 0)
     fluxes_flat     = np.ravel(fluxes)    + 1e-20
     fluxes_rev_flat = np.ravel(fluxes.T)  + 1e-20
@@ -94,10 +111,10 @@ def get_epr_ex_ig(W, p, return_optimal_potential=False):
     # See Kolchinsky et al., https://arxiv.org/abs/2206.14599
     import cvxpy as cp
 
-    assert(np.allclose(W.T.sum(axis=0),0))
-    dp = W.T.dot(p)
+    assert(np.allclose(W.sum(axis=0),0))
+    dp = W.dot(p)
     
-    fluxes = W.T*p[None,:]   # fluxes[j,i] is flux from i to j
+    fluxes = W*p[None,:]   # fluxes[j,i] is flux from i to j
 
     N   = len(p)
     x   = cp.Variable(shape=N)
@@ -123,7 +140,7 @@ def get_epr_ex_ig2(W,p, return_optimal_potential=False):
     # Here we solve the primal problem
     import cvxpy as cp
     
-    fluxes = W.T*p[None,:]   # fluxes[j,i] is flux from i to j
+    fluxes = W*p[None,:]   # fluxes[j,i] is flux from i to j
     np.fill_diagonal(fluxes, 0)
     N = len(p)
     x = cp.Variable(shape=fluxes.shape)
