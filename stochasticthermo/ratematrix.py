@@ -46,4 +46,12 @@ def get_random_ratematrix(N,p, exp=1):
     return W
 
 
-
+def get_adjoint_ratematrix(W):
+    # Return adjoint W_ji = W_ij pi_j / pi_i
+    st = get_stationary(W)
+    n  = len(st)
+    Wadj = np.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            Wadj[i,j] = W[j,i]*st[i]/st[j]
+    return Wadj
