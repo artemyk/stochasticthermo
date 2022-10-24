@@ -1,5 +1,5 @@
 import numpy as np
-
+from .ratematrix import get_stationary
 
 def get_epr(W,p): 
     # get entropy production rate incurred by rate matrix W on distribution
