@@ -15,6 +15,7 @@ def get_stationary(W):
     st          = np.real(st)
     st         /= st.sum()
     
+    st[np.logical_and(st<0, st>-1e-10)] = 0
     if not np.all(st>=0):
         raise Exception('Some stationary probabilities are negative %s' % str(st))
         
