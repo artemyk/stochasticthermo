@@ -90,3 +90,18 @@ def get_adjoint_ratematrix(W):
         for j in range(n):
             Wadj[i,j] = W[j,i]*st[i]/st[j]
     return Wadj
+
+
+def get_unicyclic_ratematrix(forward_rates, backward_rates):
+    # Generate unicyclic rate matrix
+    N = len(forward_rates)
+    assert(N == len(backward_rates))
+    assert(forward_rates.min() > 0 and backward_rates.min()>0)
+    W = np.zeros((N,N))
+    for i in range(N):
+        W[(i+1)%N,i] = forward_rates[i]
+        W[(i-1)%N,i] = backward_rates[i]
+        W[i,i]      -= forward_rates[i]+backward_rates[i]
+    return W
+
+
