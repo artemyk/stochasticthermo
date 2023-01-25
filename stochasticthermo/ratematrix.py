@@ -1,37 +1,45 @@
 import numpy as np
 import scipy.linalg
 
-def get_stationary(W): 
-    assert(np.allclose(W.sum(axis=0),0))
+def near_zero(x):
+    return np.abs(x).max() < 1e-8
 
-    # get stationary distribution of rate matrix W. W[i,j] is transition rate from j->i
+def get_stationary(W, checks=True):
+    """
+    Get stationary distribution of rate matrix W. 
+
+    Parameters
+    ----------
+    W : 2D np.array
+        rate matrix, W[i,j] is transition rate from j->i
+    checks : bool
+        perform sanity checks on W and stationary state
+    """ 
+    if checks:
+        assert(near_zero(W.sum(axis=0)))
+
     evec, evals = np.linalg.eig(W)
     evec1ix     = np.isclose(evec,0)
-    if not (sum(evec1ix)==1):
+
+    if checks and sum(evec1ix) != 1:
         raise Exception('# of eigenvalue=0 eigenvector is not 1. %s' % str(evec))
         
-    st          = np.ravel(evals[:,evec1ix])
-    assert(np.allclose(np.imag(st), 0))
+    st          = evals[:,evec1ix].T[0]
+
+    if checks:
+        assert(near_zero(np.imag(st)))
+
     st          = np.real(st)
     st         /= st.sum()
     
-    st[np.logical_and(st<0, st>-1e-10)] = 0
-    if not np.all(st>=0):
+    if st.min() < -1e-10:
         raise Exception('Some stationary probabilities are negative %s' % str(st))
+    st[st<0] = 0
         
-    assert(np.allclose(W @ st,0))
-    return st
+    if checks:
+        assert(near_zero(W @ st))
 
-# def get_st(R):
-#     evals, evecs = scipy.linalg.eig(R)
-#     ixs          = np.flatnonzero(np.isclose(evals,0,atol=1e-6))
-#     if len(ixs) != 1: raise Exception()
-#     p  = evecs[:,ixs[0]]
-#     if not np.allclose(R.dot(p),0)  : raise Exception()
-#     if not np.allclose(np.imag(p),0): raise Exception()
-#     p  = np.real(p)
-#     p /= p.sum()
-#     return p
+    return st
 
 
 def get_second_eigs(W):
