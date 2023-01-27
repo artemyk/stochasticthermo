@@ -73,6 +73,16 @@ def get_random_ratematrix(N,p=None, exp=1):
     return W
 
 
+def get_fluxes(W, p=None):
+    # Get matrix of fluxes given rate matrix W and distribution p
+    # If p is not specified, use the steady state distribution
+    assert(near_zero(W.sum(axis=0)))
+    if p is None:
+        p = get_stationary(W)
+    fluxes = W*p[None,:]
+    return fluxes
+
+
 def get_random_ratematrix_pareto(N):
     R = np.random.pareto(.75, (N, N))
     #R = np.random.random((N,N))
