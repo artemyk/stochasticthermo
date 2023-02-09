@@ -3,37 +3,44 @@ import scipy.linalg
 
 eps = 1e-5
 
-def get_stationary(W): 
-    assert(np.all(np.abs(W.sum(axis=0))<=eps))
+def near_zero(x):
+    return np.abs(x).max() < 1e-8
 
-    # get stationary distribution of rate matrix W. W[i,j] is transition rate from j->i
+def get_stationary(W, checks=True):
+    """
+    Get stationary distribution of rate matrix W. 
+
+    Parameters
+    ----------
+    W : 2D np.array
+        rate matrix, W[i,j] is transition rate from j->i
+    checks : bool
+        perform sanity checks on W and stationary state
+    """ 
+    if checks:
+        assert(near_zero(W.sum(axis=0)))
+
     evec, evals = np.linalg.eig(W)
     evec1ix     = np.abs(evec)<=eps
     if not (sum(evec1ix)==1):
         raise Exception('# of eigenvalue=0 eigenvector is not 1. %s' % str(evec))
         
-    st          = np.ravel(evals[:,evec1ix])
-    assert(np.allclose(np.imag(st), 0))
+    st          = evals[:,evec1ix].T[0]
+
+    if checks:
+        assert(near_zero(np.imag(st)))
+
     st          = np.real(st)
     st         /= st.sum()
     
-    st[np.logical_and(st<0, st>-eps)] = 0
-    if not np.all(st>=0):
+    if st.min() < -1e-10:
         raise Exception('Some stationary probabilities are negative %s' % str(st))
+    st[st<0] = 0
         
-    assert(np.all(np.abs(W @ st)<=eps))
-    return st
+    if checks:
+        assert(near_zero(W @ st))
 
-# def get_st(R):
-#     evals, evecs = scipy.linalg.eig(R)
-#     ixs          = np.flatnonzero(np.isclose(evals,0,atol=eps))
-#     if len(ixs) != 1: raise Exception()
-#     p  = evecs[:,ixs[0]]
-#     if not np.allclose(R.dot(p),0)  : raise Exception()
-#     if not np.allclose(np.imag(p),0): raise Exception()
-#     p  = np.real(p)
-#     p /= p.sum()
-#     return p
+    return st
 
 
 def get_second_eigs(W):
@@ -67,6 +74,16 @@ def get_random_ratematrix(N,p=None, exp=1):
     return W
 
 
+def get_fluxes(W, p=None):
+    # Get matrix of fluxes given rate matrix W and distribution p
+    # If p is not specified, use the steady state distribution
+    assert(near_zero(W.sum(axis=0)))
+    if p is None:
+        p = get_stationary(W)
+    fluxes = W*p[None,:]
+    return fluxes
+
+
 def get_random_ratematrix_pareto(N):
     R = np.random.pareto(.75, (N, N))
     #R = np.random.random((N,N))
@@ -84,3 +101,18 @@ def get_adjoint_ratematrix(W):
         for j in range(n):
             Wadj[i,j] = W[j,i]*st[i]/st[j]
     return Wadj
+
+
+def get_unicyclic_ratematrix(forward_rates, backward_rates):
+    # Generate unicyclic rate matrix
+    N = len(forward_rates)
+    assert(N == len(backward_rates))
+    assert(forward_rates.min() > 0 and backward_rates.min()>0)
+    W = np.zeros((N,N))
+    for i in range(N):
+        W[(i+1)%N,i] = forward_rates[i]
+        W[(i-1)%N,i] = backward_rates[i]
+        W[i,i]      -= forward_rates[i]+backward_rates[i]
+    return W
+
+

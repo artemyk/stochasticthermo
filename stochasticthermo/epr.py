@@ -9,6 +9,7 @@ def get_epr(W,p):
     for i in range(N):
         for j in range(N):
             if i != j and fluxes[i,j] != 0:
+                assert(fluxes[i,j]>0)
                 r +=  fluxes[i,j]*np.log( fluxes[i,j]/fluxes[j,i] )
     return r
 
