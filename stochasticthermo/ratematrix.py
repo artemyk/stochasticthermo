@@ -75,13 +75,21 @@ def get_random_ratematrix(N,p=None, exp=1):
 
 
 def get_fluxes(W, p=None):
-    # Get matrix of fluxes given rate matrix W and distribution p
+    # Get matrix of 1-way fluxes given rate matrix W and distribution p
     # If p is not specified, use the steady state distribution
     assert(near_zero(W.sum(axis=0)))
     if p is None:
         p = get_stationary(W)
     fluxes = W*p[None,:]
     return fluxes
+
+def get_dynamical_activities(W, p=None):
+    # Get matrix of dynamical activities given rate matrix W and 
+    # distribution p
+    # If p is not specified, use the steady state distribution
+    fluxes = get_fluxes(W, p)
+    np.fill_diagonal(fluxes, 0)
+    return fluxes + fluxes.T
 
 
 def get_random_ratematrix_pareto(N):
@@ -114,5 +122,10 @@ def get_unicyclic_ratematrix(forward_rates, backward_rates):
         W[(i-1)%N,i] = backward_rates[i]
         W[i,i]      -= forward_rates[i]+backward_rates[i]
     return W
+
+def get_random_unicyclic_ratematrix(N):
+    k  = np.random.random(N)
+    kk = np.random.random(N)
+    return get_unicyclic_ratematrix(k, kk)
 
 
