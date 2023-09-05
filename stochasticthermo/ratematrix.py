@@ -67,8 +67,6 @@ def get_random_ratematrix(N, density=1, p_st=None, exp=1):
         number of states
     density : float (default 1)
         percentage of edges to fill in
-    p_st : array of float (default None)
-        desired stationary distribution (if we want to normalize activity to 1)
     exp  : float (default 1)
         parameter to make distribution fatter tailed
     """
@@ -79,29 +77,31 @@ def get_random_ratematrix(N, density=1, p_st=None, exp=1):
         W = W*mask
 
     np.fill_diagonal(W,0)
-    
-    if p is not None:
-        assert(len(p)==N)
-        fluxes = W*p[None,:]    
-        W     /= fluxes.sum()                    # normalize activity to 1
-
-    W     -= np.diag(W.sum(axis=0))
+    W  -= np.diag(W.sum(axis=0))
     return W
 
 
 def get_fluxes(W, p=None):
-    # Get matrix of 1-way fluxes given rate matrix W and distribution p
-    # If p is not specified, use the steady state distribution
+    """
+    Get matrix of 1-way fluxes given rate matrix W and distribution p
+    If p is not specified, use the steady state distribution
+
+    """
+
     assert(near_zero(W.sum(axis=0)))
     if p is None:
         p = get_stationary(W)
     fluxes = W*p[None,:]
     return fluxes
 
+
 def get_dynamical_activities(W, p=None):
-    # Get matrix of dynamical activities given rate matrix W and 
-    # distribution p
-    # If p is not specified, use the steady state distribution
+    """
+    Get matrix of dynamical activities given rate matrix W and 
+    distribution p
+    If p is not specified, use the steady state distribution
+    """
+    
     fluxes = get_fluxes(W, p)
     np.fill_diagonal(fluxes, 0)
     return fluxes + fluxes.T
