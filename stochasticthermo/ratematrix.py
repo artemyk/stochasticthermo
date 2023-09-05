@@ -57,21 +57,27 @@ def get_second_eigs(W):
 
     return ev, l2, r2
 
-def get_random_ratematrix(N, p=None, exp=1):
+def get_random_ratematrix(N, density=1, p_st=None, exp=1):
     """
     Generate random rate matrix. 
     
     Parameters
     ----------
-    N : int
+    N    : int
         number of states
-    p : array of float (default None)
+    density : float (default 1)
+        percentage of edges to fill in
+    p_st : array of float (default None)
         desired stationary distribution (if we want to normalize activity to 1)
-    exp : float (default 1)
+    exp  : float (default 1)
         parameter to make distribution fatter tailed
     """
 
     W = np.random.random((N,N))**exp  # make distribution fatter tailed
+    if density != 1:
+        mask = (np.random.random((N,N))<density).astype('float')
+        W = w*mask
+
     np.fill_diagonal(W,0)
     
     if p is not None:
@@ -131,7 +137,7 @@ def get_unicyclic_ratematrix(forward_rates, backward_rates):
     backward_rates : np.array of floats
         backward rates
     """
-    
+
     N = len(forward_rates)
     assert(N == len(backward_rates))
     assert(forward_rates.min() > 0 and backward_rates.min()>0)
