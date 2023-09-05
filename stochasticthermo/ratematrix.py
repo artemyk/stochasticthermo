@@ -76,7 +76,7 @@ def get_random_ratematrix(N, density=1, p_st=None, exp=1):
     W = np.random.random((N,N))**exp  # make distribution fatter tailed
     if density != 1:
         mask = (np.random.random((N,N))<density).astype('float')
-        W = w*mask
+        W = W*mask
 
     np.fill_diagonal(W,0)
     
