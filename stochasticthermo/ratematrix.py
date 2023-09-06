@@ -140,7 +140,7 @@ def get_unicyclic_ratematrix(forward_rates, backward_rates):
 
     N = len(forward_rates)
     assert(N == len(backward_rates))
-    assert(forward_rates.min() > 0 and backward_rates.min()>0)
+    assert(np.min(forward_rates) >= 0 and np.min(backward_rates)>=0)
     W = np.zeros((N,N))
     for i in range(N):
         W[(i+1)%N,i] = forward_rates[i]

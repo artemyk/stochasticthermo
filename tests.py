@@ -24,3 +24,4 @@ W = st.get_random_ratematrix(N=10, density=0.1)
 W3= st.get_random_ratematrix(N=3, p_st=p_st2)
 
 
+st.get_unicyclic_ratematrix([1,2,3],[2,3,5])
