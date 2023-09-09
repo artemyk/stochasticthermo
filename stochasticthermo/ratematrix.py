@@ -81,28 +81,29 @@ def get_random_ratematrix(N, density=1, p_st=None, exp=1):
     return W
 
 
-def get_fluxes(W, p=None):
+def get_fluxes(W, p=None, checks=True):
     """
     Get matrix of 1-way fluxes given rate matrix W and distribution p
     If p is not specified, use the steady state distribution
 
     """
+    if checks:
+        assert(near_zero(W.sum(axis=0)))
 
-    assert(near_zero(W.sum(axis=0)))
     if p is None:
-        p = get_stationary(W)
+        p = get_stationary(W, checks=checks)
     fluxes = W*p[None,:]
     return fluxes
 
 
-def get_dynamical_activities(W, p=None):
+def get_dynamical_activities(W, p=None, checks=True):
     """
     Get matrix of dynamical activities given rate matrix W and 
     distribution p
     If p is not specified, use the steady state distribution
     """
     
-    fluxes = get_fluxes(W, p)
+    fluxes = get_fluxes(W, p, checks=checks)
     np.fill_diagonal(fluxes, 0)
     return fluxes + fluxes.T
 
@@ -115,9 +116,9 @@ def get_random_ratematrix_pareto(N):
     return R
 
 
-def get_adjoint_ratematrix(W):
+def get_adjoint_ratematrix(W, checks=True):
     # Return adjoint W_ji^* = W_ij pi_j / pi_i
-    st = get_stationary(W)
+    st = get_stationary(W, checks=checks)
     n  = len(st)
     Wadj = np.zeros((n,n))
     for i in range(n):
