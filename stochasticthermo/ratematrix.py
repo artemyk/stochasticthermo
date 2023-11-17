@@ -22,7 +22,7 @@ def get_stationary(W, checks=True):
 
     evec, evals = np.linalg.eig(W)
     evec1ix     = np.abs(evec)<=eps
-    if not (sum(evec1ix)==1):
+    if checks and not (sum(evec1ix)==1):
         raise Exception('# of eigenvalue=0 eigenvector is not 1. %s' % str(evec))
         
     st          = evals[:,evec1ix].T[0]
