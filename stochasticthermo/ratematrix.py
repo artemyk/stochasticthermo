@@ -149,9 +149,21 @@ def get_unicyclic_ratematrix(forward_rates, backward_rates):
         W[i,i]      -= forward_rates[i]+backward_rates[i]
     return W
 
-def get_random_unicyclic_ratematrix(N):
-    k  = np.random.random(N)
-    kk = np.random.random(N)
+def get_random_unicyclic_ratematrix(N, p=1.0, g=1.0):
+    """
+    Generate random unicyclic rate matrix
+
+    Parameters
+    ----------
+    N : int
+        number of states
+    p : float (default 1)
+        control homogeneity (p=0 all uniform)
+    g : float (default 1)
+        degree of disequilibrium (forward rates bigger than reverse)
+    """
+    k  = np.random.random(N)**p
+    kk = g * np.random.random(N)**p
     return get_unicyclic_ratematrix(k, kk)
 
 
