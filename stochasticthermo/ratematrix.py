@@ -44,7 +44,23 @@ def get_stationary(W, checks=True):
 
 
 def get_second_eigs(W):
-    # return second eigenvalue and eigenvectors
+    """
+    Returns second eigenvalue and eigenvectors of matrix W
+
+    Parameters
+    ----------
+    W : NxN np.array
+
+    Returns
+    -------
+    eigenvalue : float
+        Second eigenvalue
+    u : np.array
+        Left eigenvector
+    v : np.array
+        Right eigenvector
+    """
+
     d, u, v = scipy.linalg.eig(W, left=True, right=True)
     ix = np.argsort(np.real(d))[-2]
     l2 = u[:,ix] / np.linalg.norm(u[:,ix])
