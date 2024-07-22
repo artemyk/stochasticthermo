@@ -20,12 +20,12 @@ def get_stationary(W, checks=True):
     if checks:
         assert(near_zero(W.sum(axis=0)))
 
-    evec, evals = np.linalg.eig(W)
-    evec1ix     = np.abs(evec)<=eps
-    if checks and not (sum(evec1ix)==1):
-        raise Exception('# of eigenvalue=0 eigenvector is not 1. %s' % str(evec))
+    N = scipy.linalg.null_space(W)
+    if checks and N.shape[1] != 1:
+        rnk = N.shape[1]
+        raise Exception(f'rank of null space not 1. {rnk}')
         
-    st          = evals[:,evec1ix].T[0]
+    st          = N.flatten()
 
     if checks:
         assert(near_zero(np.imag(st)))
@@ -34,7 +34,7 @@ def get_stationary(W, checks=True):
     st         /= st.sum()
     
     if st.min() < -1e-10:
-        raise Exception('Some stationary probabilities are negative %s' % str(st))
+        raise Exception(f'Some stationary probabilities are negative {st}')
     st[st<0] = 0
         
     if checks:
@@ -165,7 +165,8 @@ def get_unicyclic_ratematrix(forward_rates, backward_rates):
         W[i,i]      -= forward_rates[i]+backward_rates[i]
     return W
 
-def get_random_unicyclic_ratematrix(N, p=1.0, g=1.0):
+
+def get_random_unicyclic_ratematrix(N, p=1.0, g=1.0, **kwargs):
     """
     Generate random unicyclic rate matrix
 
@@ -177,9 +178,12 @@ def get_random_unicyclic_ratematrix(N, p=1.0, g=1.0):
         control homogeneity (p=0 all uniform)
     g : float (default 1)
         degree of disequilibrium (forward rates bigger than reverse)
+    kwargs : dict
+        additional keyword arguments to pass to get_unicyclic_ratematrix
     """
+
     k  = np.random.random(N)**p
     kk = g * np.random.random(N)**p
-    return get_unicyclic_ratematrix(k, kk)
+    return get_unicyclic_ratematrix(k, kk, **kwargs)
 
 
