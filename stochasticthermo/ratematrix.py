@@ -186,4 +186,26 @@ def get_random_unicyclic_ratematrix(N, p=1.0, g=1.0, **kwargs):
     kk = g * np.random.random(N)**p
     return get_unicyclic_ratematrix(k, kk, **kwargs)
 
+def get_random_birthdeath_ratematrix(N, p=1.0, g=1.0, **kwargs):
+    """
+    Generate random birth-death rate matrix
+
+    Parameters
+    ----------
+    N : int
+        number of states
+    p : float (default 1)
+        control homogeneity (p=0 all uniform)
+    g : float (default 1)
+        degree of disequilibrium (forward rates bigger than reverse)
+    kwargs : dict
+        additional keyword arguments to pass to get_unicyclic_ratematrix
+    """
+
+    k  = np.random.random(N)**p
+    kk = g * np.random.random(N)**p
+    k[-1] = kk[0] = 0
+    return get_unicyclic_ratematrix(k, kk, **kwargs)
+
+
 
