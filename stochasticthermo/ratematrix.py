@@ -43,36 +43,6 @@ def get_stationary(W, checks=True):
     return st
 
 
-def get_second_eigs(W):
-    """
-    Returns second eigenvalue and eigenvectors of matrix W
-
-    Parameters
-    ----------
-    W : NxN np.array
-
-    Returns
-    -------
-    eigenvalue : float
-        Second eigenvalue
-    u : np.array
-        Left eigenvector
-    v : np.array
-        Right eigenvector
-    """
-
-    d, u, v = scipy.linalg.eig(W, left=True, right=True)
-    ix = np.argsort(np.real(d))[-2]
-    l2 = u[:,ix] / np.linalg.norm(u[:,ix])
-    r2 = v[:,ix] / np.linalg.norm(v[:,ix])
-    ev = d[ix]
-
-    if False: # do checks
-        assert(np.allclose((l2@W), np.conj(ev)*l2))
-        assert(np.allclose((W@r2), ev*r2))
-
-    return ev, l2, r2
-
 def get_random_ratematrix(N, density=1, p_st=None, exp=1):
     """
     Generate random rate matrix. 
