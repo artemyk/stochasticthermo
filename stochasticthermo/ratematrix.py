@@ -181,3 +181,53 @@ def get_random_birthdeath_ratematrix(N, p=1.0, g=1.0, **kwargs):
 
 
 
+def get_1D_ratematrix(forward_rates, backward_rates):
+    """
+    Generate rate matrix representing 1D random walk
+
+    Parameters
+    ----------
+    forward_rates : np.array of floats
+        forward rates i->i+1  for i=0 to N
+    backward_rates : np.array of floats
+        backward rates i->i-1 for i=1 to N+1
+
+    Returns
+    -------
+    (N+1)x(N+1) rate matrix, where N = len(forward_rates)
+    """
+
+    N = len(forward_rates)
+    assert(N == len(backward_rates))
+    assert(np.min(forward_rates) >= 0 and np.min(backward_rates)>=0)
+    W = np.zeros((N+1,N+1))
+    for i in range(N):
+        if i <= N:
+            W[i+1,i] = forward_rates[i]
+        if i >  0:
+            W[i-1,i] = backward_rates[i-1]
+        W[i,i]      -= W[:,i].sum()
+    return W
+
+def get_random_1D_ratematrix(N, p=1.0, g=1.0):
+    """
+    Generate random 1D random walk rate matrix
+
+    Parameters
+    ----------
+    N : int
+        number of states
+    p : float (default 1)
+        control homogeneity (p=0 all uniform)
+    g : float (default 1)
+        degree of disequilibrium (forward rates bigger than reverse)
+    """
+    k  = np.random.random(N-1)**p
+    kk = g * np.random.random(N-1)**p
+    return get_1D_ratematrix(k, kk)
+
+
+
+
+
+
