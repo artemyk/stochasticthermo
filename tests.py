@@ -17,6 +17,13 @@ class TestRB(unittest.TestCase):
 		W = st.get_random_ratematrix(N=10, exp=2)
 		W = st.get_random_ratematrix(N=10, density=0.1)
 
+	def test_get_random_1D_ratematrix(self):
+		W = st.get_random_1D_ratematrix(N=10)
+
+	def test_get_1D_ratematrix(self):
+		W = st.get_1D_ratematrix([1,2,3],[2.1,.2,.4])
+		
+
 	def test_get_random_ratematrices_with_stationary(self):
 
 		W2 = np.array([[-1, 2,  1], 
