@@ -2,7 +2,7 @@ import numpy as np
 from .ratematrix import get_stationary
 
 def get_epr(W,p): 
-    # get entropy production rate incurred by rate matrix W on distribution
+    # get entropy production rate incurred by rate matrix W on distribution p
     N   = len(p)
     fluxes = W*p[None,:]
     r   = 0
@@ -12,6 +12,17 @@ def get_epr(W,p):
                 assert(fluxes[i,j]>0)
                 r +=  fluxes[i,j]*np.log( fluxes[i,j]/fluxes[j,i] )
     return r
+
+def get_entropy_change(W,p): 
+    # get dS/dt by rate matrix W on distribution p, where S is Shannon entropy (in bits)
+    N   = len(p)
+    dp  = W@p
+
+    assert(np.isclose(dp.sum(),0))
+
+    ixs = dp != 0
+    return -dp[ixs]@np.log(p[ixs])
+
 
 
 def get_epr_ex_hs(W,p): 
@@ -80,7 +91,7 @@ def get_epr_ex_ig(W, p, return_optimal_potential=False):
                 obj -= fluxes[j,i]*(cp.exp(x[j]-x[i])-1)
                 
     prob = cp.Problem(cp.Maximize(obj))
-    prob.solve(solver=cp.CLARABEL) 
+    prob.solve(solver=cp.CLARABEL, max_iter=500) 
     
     if return_optimal_potential:
         return obj.value, x.value
@@ -112,7 +123,7 @@ def get_epr_ex_ig2(W,p, return_optimal_potential=False):
                 obj  += cp.kl_div(x[i,j], fluxes[j,i])
             
     prob = cp.Problem(cp.Minimize(obj), [c[i] == dp[i] for i in range(N)] + f)
-    prob.solve(solver=cp.CLARABEL)
+    prob.solve(solver=cp.CLARABEL, max_iter=500)
     
     if return_optimal_potential:
         return obj.value, x.value
