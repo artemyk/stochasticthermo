@@ -29,9 +29,7 @@ class TestRB(unittest.TestCase):
 		W2 = np.array([[-1, 2,  1], 
 			           [1,-3,  1], 
 			           [0, 1, -2]])
-
 		p_st2 = st.get_stationary(W2)
-
 
 		W3= st.get_random_ratematrix(N=3, p_st=p_st2)
 

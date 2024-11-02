@@ -1,10 +1,17 @@
 import numpy as np
 import scipy.linalg
 
-eps = 1e-5
 
 def near_zero(x):
     return np.abs(x).max() < 1e-8
+
+
+def is_valid_ratematrix(W):
+    diags = np.diag(W)
+    assert(np.all(diags<=0))          # diagonals are negative
+    assert(np.all(W>=np.diag(diags))) # off diagonals are positive
+    assert(near_zero(W.sum(axis=0)))
+
 
 def get_stationary(W, checks=True):
     """
@@ -18,7 +25,7 @@ def get_stationary(W, checks=True):
         perform sanity checks on W and stationary state
     """ 
     if checks:
-        assert(near_zero(W.sum(axis=0)))
+        is_valid_ratematrix(W)
 
     N = scipy.linalg.null_space(W)
     if checks and N.shape[1] != 1:
@@ -74,7 +81,7 @@ def get_fluxes(W, p=None, checks=True):
 
     """
     if checks:
-        assert(near_zero(W.sum(axis=0)))
+        is_valid_ratematrix(W)
 
     if p is None:
         p = get_stationary(W, checks=checks)
