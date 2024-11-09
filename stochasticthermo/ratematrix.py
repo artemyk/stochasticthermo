@@ -82,6 +82,7 @@ def get_fluxes(W, p=None, checks=True):
     Get matrix of 1-way fluxes given rate matrix W and distribution p
     If p is not specified, use the steady state distribution
 
+    Note that the diagonals are set to 0
     """
     if checks:
         is_valid_ratematrix(W)
@@ -89,6 +90,8 @@ def get_fluxes(W, p=None, checks=True):
     if p is None:
         p = get_stationary(W, checks=checks)
     fluxes = W*p[None,:]
+    np.fill_diagonal(fluxes, 0)
+    
     return fluxes
 
 

@@ -91,7 +91,7 @@ def get_epr_ex_ig(W, p, return_optimal_potential=False):
                 obj -= fluxes[j,i]*(cp.exp(x[j]-x[i])-1)
                 
     prob = cp.Problem(cp.Maximize(obj))
-    prob.solve(solver=cp.CLARABEL, max_iter=500) 
+    prob.solve() # solver=cp.CLARABEL, max_iter=1500) 
     
     if return_optimal_potential:
         return obj.value, x.value
