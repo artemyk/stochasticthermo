@@ -12,6 +12,9 @@ def is_valid_ratematrix(W):
     assert(np.all(W>=np.diag(diags))) # off diagonals are positive
     assert(near_zero(W.sum(axis=0)))
 
+def is_valid_probability(p):
+    assert(np.all(p>=0))
+    assert(np.isclose(np.sum(p),1))
 
 def get_stationary(W, checks=True):
     """
@@ -236,5 +239,39 @@ def get_random_1D_ratematrix(N, p=1.0, g=1.0):
 
 
 
+def get_wasserstein1_speed(R, p):
+    import cvxpy as cp
+
+    is_valid_ratematrix(R)
+    is_valid_probability(p)
+
+
+    n = R.shape[0]
+    
+    # Define the variable matrix J (n x n)
+    J = cp.Variable((n, n), nonneg=True)
+    
+    # Define the objective: minimize the sum of absolute off-diagonal entries in J
+    objective = cp.Minimize(cp.sum(cp.abs(J)))
+    
+    # Set up the constraints
+    constraints = []
+    
+    # If R[i, j] == 0, then J[i, j] must be 0
+    constraints += [J[i, j] == 0 for i in range(n) for j in range(n) if np.isclose(R[i, j], 0)]
+    
+    # Flow conservation constraint: sum of flow out minus sum of flow in equals R @ p
+    Rp = R @ p
+    
+    for i in range(n):
+        constraints.append(J[i,i] == 0)
+        constraints.append(cp.sum(J[i, :]-J[:, i]) == Rp[i])
+        
+    
+    # Solve the problem
+    problem = cp.Problem(objective, constraints)
+    problem.solve()
+    
+    return J.value, problem.value
 
 

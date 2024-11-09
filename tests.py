@@ -65,5 +65,16 @@ class TestRB(unittest.TestCase):
 		st.get_epr_ex_ig(R,p)
 
 
+	def test_wasserstein(self):
+		R = np.array([[-.8, 0.1, 0.2],
+		              [0.3, -0.7, 0.4],
+		              [0.5, 0.6, -0.6]])
+		p = np.array([0.2, 0.5, 0.3])
+
+		opt_j, opt_val = st.get_wasserstein1_speed(R,p)
+		assert(np.isclose(opt_val, 0.22))
+
+
+
 if __name__ == '__main__': 
     unittest.main() 
