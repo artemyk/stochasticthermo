@@ -71,9 +71,9 @@ class TestRB(unittest.TestCase):
 		              [0.5, 0.6, -0.6]])
 		p = np.array([0.2, 0.5, 0.3])
 
-		opt_j, opt_val = st.get_wasserstein1_speed(R,R@p)
+		opt_j, opt_val = st.get_wasserstein1_speed_primal(R,R@p)
 		assert(np.isclose(opt_val, 0.22))
-		opt_pot, opt_val = st.get_wasserstein1_speed_dual(R,R@p)
+		opt_pot, opt_val = st.get_wasserstein1_speed(R,R@p)
 		assert(np.isclose(opt_val, 0.22))
 
 

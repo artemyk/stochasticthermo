@@ -241,67 +241,96 @@ def get_random_1D_ratematrix(N, p=1.0, g=1.0):
 
 
 
+from scipy.optimize import linprog
+
+def get_wasserstein1_speed_primal(R, dp):
+    # Ensure the rate matrix R is valid and dp sums close to zero
+    is_valid_ratematrix(R)
+    assert(np.isclose(dp.sum(), 0))
+
+    n = R.shape[0]
+    
+    # Define the number of variables: one for each (i, j) pair in J
+    num_vars = n * n
+    
+    # Set up the objective to minimize the sum of entries in J
+    c = np.ones(num_vars)  # We want to minimize the sum of all entries in J
+
+    # Constraints to enforce J[i, j] == 0 where R[i, j] == 0
+    A_eq = []
+    b_eq = []
+    
+    # Populate constraints
+    for i in range(n):
+        # Constraint: Row sum minus column sum equals dp[i]
+        row_constraint = np.zeros(num_vars)
+        col_constraint = np.zeros(num_vars)
+        
+        for j in range(n):
+            if np.isclose(R[i, j], 0):
+                # If R[i, j] == 0, we set J[i, j] = 0
+                zero_constraint = np.zeros(num_vars)
+                zero_constraint[i * n + j] = 1
+                A_eq.append(zero_constraint)
+                b_eq.append(0)
+                
+            row_constraint[i * n + j] = 1  # J[i, j] term in row sum
+            col_constraint[j * n + i] = -1 # J[j, i] term in column sum
+
+        A_eq.append(row_constraint + col_constraint)
+        b_eq.append(dp[i])
+
+    # Convert to arrays for linprog
+    A_eq = np.array(A_eq)
+    b_eq = np.array(b_eq)
+
+    # Use SciPy's linprog to solve the optimization problem
+    result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=(0, None), method='highs')
+    
+    if result.success:
+        # Reshape the solution back into an (n x n) matrix
+        J = result.x.reshape((n, n))
+        return J, result.fun
+    else:
+        raise ValueError("Optimization did not converge")
+
+
 
 def get_wasserstein1_speed(R, dp):
-    import cvxpy as cp
-
+    # Ensure the rate matrix R is valid and dp sums close to zero
     is_valid_ratematrix(R)
-    assert(np.isclose(dp.sum(),0))
-
+    assert(np.isclose(dp.sum(), 0))
 
     n = R.shape[0]
     
-    # Define the variable matrix J (n x n)
-    J = cp.Variable((n, n), nonneg=True)
-    
-    # Define the objective: minimize the sum of absolute off-diagonal entries in J
-    objective = cp.Minimize(cp.sum(cp.abs(J)))
-    
-    # Set up the constraints
-    constraints = []
-    
-    # If R[i, j] == 0, then J[i, j] must be 0
-    constraints += [J[i, j] == 0 for i in range(n) for j in range(n) if np.isclose(R[i, j], 0)]
-    
-    
+    # We split each potential difference constraint |pot[i] - pot[j]| <= 1 
+    # into two linear constraints: pot[i] - pot[j] <= 1 and pot[j] - pot[i] <= 1
+    num_constraints = sum(1 for i in range(n) for j in range(n) if not np.isclose(R[i, j], 0))
+    c = -dp  # Maximize dp @ pot can be represented as minimizing -dp @ pot in linprog
+
+    # Define constraints
+    A = np.zeros((2 * num_constraints, n))
+    b = np.ones(2 * num_constraints)
+
+    constraint_index = 0
     for i in range(n):
-        constraints.append(J[i,i] == 0)
-        constraints.append(cp.sum(J[i, :]-J[:, i]) == dp[i])
-        
-    
-    # Solve the problem
-    problem = cp.Problem(objective, constraints)
-    problem.solve()
-    
-    return J.value, problem.value
+        for j in range(n):
+            if i == j:
+                continue
+            if not np.isclose(R[i, j], 0):
+                # Constraint pot[i] - pot[j] <= 1
+                A[constraint_index, i] = 1
+                A[constraint_index, j] = -1
+                # Constraint pot[j] - pot[i] <= 1
+                A[constraint_index + 1, i] = -1
+                A[constraint_index + 1, j] = 1
+                constraint_index += 2
 
-
-def get_wasserstein1_speed_dual(R, dp):
-    import cvxpy as cp
-
-    is_valid_ratematrix(R)
-    assert(np.isclose(dp.sum(),0))
-
-
-    n = R.shape[0]
+    # Use SciPy's linprog to solve
+    result = linprog(c, A_ub=A, b_ub=b, method='highs')
     
-    # Define the variable matrix J (n x n)
-    pot = cp.Variable(n)
-    
-    # Define the objective: minimize the sum of absolute off-diagonal entries in J
-    objective = cp.Maximize( dp @ pot )
-    
-    # Set up the constraints
-    constraints = []
-    
-    # If R[i, j] == 0, then J[i, j] must be 0
-    constraints += [cp.abs(pot[i]-pot[j]) <= 1 for i in range(n) for j in range(n) if not np.isclose(R[i, j], 0)]
-    
-    # Solve the problem
-    problem = cp.Problem(objective, constraints)
-    problem.solve()
-    
-    return pot.value, problem.value
-
-
+    if result.success:
+        return result.x, -result.fun
+    else:
+        raise ValueError("Optimization did not converge")
 
