@@ -242,11 +242,11 @@ def get_random_1D_ratematrix(N, p=1.0, g=1.0):
 
 
 
-def get_wasserstein1_speed(R, p):
+def get_wasserstein1_speed(R, dp):
     import cvxpy as cp
 
     is_valid_ratematrix(R)
-    is_valid_probability(p)
+    assert(np.isclose(dp.sum(),0))
 
 
     n = R.shape[0]
@@ -263,12 +263,10 @@ def get_wasserstein1_speed(R, p):
     # If R[i, j] == 0, then J[i, j] must be 0
     constraints += [J[i, j] == 0 for i in range(n) for j in range(n) if np.isclose(R[i, j], 0)]
     
-    # Flow conservation constraint: sum of flow out minus sum of flow in equals R @ p
-    Rp = R @ p
     
     for i in range(n):
         constraints.append(J[i,i] == 0)
-        constraints.append(cp.sum(J[i, :]-J[:, i]) == Rp[i])
+        constraints.append(cp.sum(J[i, :]-J[:, i]) == dp[i])
         
     
     # Solve the problem
@@ -276,5 +274,34 @@ def get_wasserstein1_speed(R, p):
     problem.solve()
     
     return J.value, problem.value
+
+
+def get_wasserstein1_speed_dual(R, dp):
+    import cvxpy as cp
+
+    is_valid_ratematrix(R)
+    assert(np.isclose(dp.sum(),0))
+
+
+    n = R.shape[0]
+    
+    # Define the variable matrix J (n x n)
+    pot = cp.Variable(n)
+    
+    # Define the objective: minimize the sum of absolute off-diagonal entries in J
+    objective = cp.Maximize( dp @ pot )
+    
+    # Set up the constraints
+    constraints = []
+    
+    # If R[i, j] == 0, then J[i, j] must be 0
+    constraints += [cp.abs(pot[i]-pot[j]) <= 1 for i in range(n) for j in range(n) if not np.isclose(R[i, j], 0)]
+    
+    # Solve the problem
+    problem = cp.Problem(objective, constraints)
+    problem.solve()
+    
+    return pot.value, problem.value
+
 
 
