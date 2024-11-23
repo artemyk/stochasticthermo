@@ -35,22 +35,22 @@ def get_stationary(W, checks=True):
         rnk = N.shape[1]
         raise Exception(f'rank of null space not 1. {rnk}')
         
-    st          = N.flatten()
+    p_st        = N.flatten()
 
     if checks:
-        assert(near_zero(np.imag(st)))
+        assert(near_zero(np.imag(p_st)))
 
-    st          = np.real(st)
-    st         /= st.sum()
+    p_st        = np.real(p_st)
+    p_st       /= p_st.sum()
     
-    if st.min() < -1e-10:
-        raise Exception(f'Some stationary probabilities are negative {st}')
-    st[st<0] = 0
+    if p_st.min() < -1e-10:
+        raise Exception(f'Some stationary probabilities are negative {p_st}')
+    p_st[p_st<0] = 0
         
     if checks:
-        assert(near_zero(W @ st))
+        assert(near_zero(W @ p_st))
 
-    return st
+    return p_st
 
 
 def get_random_ratematrix(N, density=1, p_st=None, exp=1):
@@ -334,3 +334,62 @@ def get_wasserstein1_speed(R, dp):
     else:
         raise ValueError("Optimization did not converge")
 
+
+
+
+
+# Get uniform cycle decomposition
+def uniform_cycle_decomposition(R):
+    J    = get_fluxes(R)
+    netJ = J - J.T  # net fluxes
+    N    = R.shape[0]
+
+    def get_traj(cur_netJ):
+        def get_next_state(traj):
+            i = int(traj[-1])
+            traj_set = set(traj[1:]) #  set(traj)
+            for j in range(N):
+                if j not in traj_set and cur_netJ[j,i]>0:
+                    return j
+            return None
+        for i in range(N):
+            traj = [i]
+            while True:
+                k = get_next_state(traj)
+                if k is None:
+                    break
+                elif k != i:
+                    traj.append(k)
+                elif k == i:
+                    return traj
+                else:
+                    raise Exception()
+                
+        return None
+
+    curNetJ          = netJ.copy()
+    cycle_fluxes     = []
+    cycle_affinities = []
+    cycles           = []
+    
+    for _ in range(10):
+        traj = get_traj(curNetJ)
+        if traj is None or len(traj) <= 1:
+            break
+            
+        cycles.append(traj)
+        traj.append(traj[0])
+        min_j = np.min([curNetJ[traj[i+1],traj[i]] for i in range(len(traj)-1)])
+        aff   = 0
+        for ix in range(len(traj)-1):
+            i, j = traj[ix], traj[ix+1]
+            curNetJ[j,i] -= min_j
+            curNetJ[i,j] += min_j
+            
+            aff += np.log(J[j,i]/J[i,j])
+        cycle_fluxes.append(min_j)
+        cycle_affinities.append(aff)
+    
+
+    return cycle_fluxes, cycle_affinities, cycles
+    

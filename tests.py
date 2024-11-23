@@ -62,7 +62,16 @@ class TestRB(unittest.TestCase):
 		R=st.get_unicyclic_ratematrix([1,2,3,4,5],[.1,.2,.3,.4,.1])
 		N=R.shape[0]
 		p=np.random.random(N) ; p/=p.sum()
-		st.get_epr_ex_ig(R,p)
+		
+		v1=st.get_epr_ex_ig(R,p)
+		v2=st.get_epr_ex_ig2(R,p)
+		assert(np.isclose(v1,v2))
+
+		v3=st.get_epr_ex_ig(R,p,cache=True)
+		assert(np.isclose(v1,v3))
+		v4=st.get_epr_ex_ig(R,p,cache=True)
+		assert(np.isclose(v1,v4))
+
 
 
 	def test_wasserstein(self):
@@ -77,6 +86,15 @@ class TestRB(unittest.TestCase):
 		assert(np.isclose(opt_val, 0.22))
 
 
+	def test_cycle_decomposition(self):
+		N=10
+		R=st.get_random_unicyclic_ratematrix(N)
+		a,b,c= st.uniform_cycle_decomposition(R)
+
+		assert(np.all(np.array(a)>0))
+		assert(np.all(np.array(b)>0))
+		assert(len(c)==1)
+		assert(c[0]==[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0] or c[0]==[0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0])
 
 if __name__ == '__main__': 
     unittest.main() 

@@ -1,8 +1,12 @@
 import numpy as np
-from .ratematrix import get_stationary
+from .ratematrix import get_stationary, is_valid_ratematrix, is_valid_probability
 
-def get_epr(W,p): 
+def get_epr(W,p,checks=True): 
     # get entropy production rate incurred by rate matrix W on distribution p
+    if checks:
+        is_valid_ratematrix(W)
+        is_valid_probability(p)
+
     N   = len(p)
     fluxes = W*p[None,:]
     r   = 0
@@ -69,34 +73,59 @@ def get_epr_ex_ons(W,p, S=None):
     return ons_ep, L
 
 
-def get_epr_ex_ig(W, p, return_optimal_potential=False): 
+_get_epr_ex_ig_cache = {}
+
+def get_epr_ex_ig(W, p, return_optimal_potential=False, cache=False): 
     # Calculate excess EP rate based on information-geometric projection
     # W is rate matrix, p is distribution over states p(x)
     # Here we solve the dual problem (Legendre transform)
     # See Kolchinsky et al., https://arxiv.org/abs/2206.14599
     import cvxpy as cp
 
-    assert(np.allclose(W.sum(axis=0),0))
-    dp = W.dot(p)
-    
-    fluxes = W*p[None,:]   # fluxes[j,i] is flux from i to j
 
-    N   = len(p)
-    x   = cp.Variable(shape=N)
-    obj = -dp @ x 
+    is_valid_ratematrix(W)
+    N  = W.shape[0]
+
+    prob       = None
+    mask_pos   = np.ones((N,N)) - np.eye(N)
+    cur_fluxes = W*p[None,:]
+
+    if cache:
+        if N in _get_epr_ex_ig_cache:
+            obj, x, fluxes, prob = _get_epr_ex_ig_cache[N]
+        else:
+            fluxes = cp.Parameter((N,N), nonneg=True)
+
+        fluxes.value = cur_fluxes*mask_pos
+    else:
+        fluxes       = cur_fluxes*mask_pos
+        
+    if prob is None:
+        x  = cp.Variable(shape=N)
+        dp = (fluxes-fluxes.T).sum(axis=1)
+
+        obj = -dp@x
     
-    for i in range(N):
-        for j in range(N):
-            if i != j and fluxes[j,i] != 0:
+        for i in range(N):
+            for j in range(N):
+                if i == j:
+                    continue
+                if not cache and np.isclose(fluxes[j,i],0):
+                    continue
                 obj -= fluxes[j,i]*(cp.exp(x[j]-x[i])-1)
                 
-    prob = cp.Problem(cp.Maximize(obj))
+        prob = cp.Problem(cp.Maximize(obj))
+
+    if cache and N not in _get_epr_ex_ig_cache:
+        _get_epr_ex_ig_cache[N] = (obj, x, fluxes, prob)
+
     prob.solve() # solver=cp.CLARABEL, max_iter=1500) 
-    
+
     if return_optimal_potential:
         return obj.value, x.value
     else:
         return obj.value
+
     
     
 def get_epr_ex_ig2(W,p, return_optimal_potential=False): 
@@ -108,22 +137,26 @@ def get_epr_ex_ig2(W,p, return_optimal_potential=False):
     fluxes = W*p[None,:]   # fluxes[j,i] is flux from i to j
     np.fill_diagonal(fluxes, 0)
     N = len(p)
-    x = cp.Variable(shape=fluxes.shape)
+    x = cp.Variable(shape=fluxes.shape, nonneg=True)
     c = [0,]* N
     f = []
 
-    dp  = W.T.dot(p)
+    dp  = W@p
+    assert(np.isclose(dp.sum(),0))
+
     obj = 0
     for i in range(N):
         for j in range(N):
+            if i == j: 
+                continue
             c[j] += x[j,i] - x[i,j]
             if fluxes[j,i] == 0:
                 f.append( x[i,j] == 0 )
             else:
-                obj  += cp.kl_div(x[i,j], fluxes[j,i])
+                obj += cp.kl_div(x[i,j], fluxes[j,i])
             
     prob = cp.Problem(cp.Minimize(obj), [c[i] == dp[i] for i in range(N)] + f)
-    prob.solve(solver=cp.CLARABEL, max_iter=500)
+    prob.solve() # solver=cp.CLARABEL, max_iter=500)
     
     if return_optimal_potential:
         return obj.value, x.value
