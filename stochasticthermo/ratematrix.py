@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.linalg
-
+from .linalg import null_space_qr
 
 def near_zero(x):
     return np.abs(x).max() < 1e-8
@@ -25,20 +25,23 @@ def get_stationary(W, checks=True):
     W : 2D np.array
         rate matrix, W[i,j] is transition rate from j->i
     checks : bool
-        perform sanity checks on W and stationary state
+        perform sanity checks on W and stationary state. E.g., checks null vector is unique
     """ 
+
     if checks:
         is_valid_ratematrix(W)
 
-    N = scipy.linalg.null_space(W)
+
+    N = null_space_qr(W)
     if checks and N.shape[1] != 1:
         rnk = N.shape[1]
         raise Exception(f'rank of null space not 1. {rnk}')
-        
+            
     p_st        = N.flatten()
 
     if checks:
         assert(near_zero(np.imag(p_st)))
+
 
     p_st        = np.real(p_st)
     p_st       /= p_st.sum()

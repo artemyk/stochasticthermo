@@ -29,12 +29,12 @@ def get_entropy_change(W,p):
 
 
 
-def get_epr_ex_hs(W,p): 
+def get_epr_ex_hs(W, p, checks=True): 
     # Calculate nonadiabatic (excess) EP rate of Hatano-Sasa
     # W is rate matrix, p is distribution over states p(x)
 
     dp = W.dot(p)
-    st = np.ravel(get_stationary(W))
+    st = np.ravel(get_stationary(W, checks=checks))
     return -dp.dot(np.log(p/st))
 
 

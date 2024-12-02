@@ -81,3 +81,16 @@ def numerical_radius(A):
     prob = cp.Problem(-cp.Maximize(obj))
     return prob.solve()
 
+
+
+
+def null_space_qr(A, tol=1e-12):
+    Q, R = scipy.linalg.qr(A.T, mode='economic')
+    
+    # Determine the rank of A using the diagonal of R
+    rank = np.sum(np.abs(np.diag(R)) > tol)
+    
+    # Null space basis vectors are in Q[:, rank:]
+    null_space = Q[:, rank:]
+    
+    return null_space
