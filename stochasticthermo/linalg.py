@@ -83,7 +83,6 @@ def numerical_radius(A):
 
 
 
-
 def null_space_qr(A, tol=1e-12):
     Q, R = scipy.linalg.qr(A.T, mode='economic')
     
@@ -94,3 +93,20 @@ def null_space_qr(A, tol=1e-12):
     null_space = Q[:, rank:]
     
     return null_space
+
+
+def get_drazin_inverse(A):
+    N = A.shape[0]
+    tol = 1e-10
+    T1,Q1,k1 = scipy.linalg.schur(A, sort=lambda x: abs(x) >= tol)
+    T2,Q2,k2 = scipy.linalg.schur(A, sort=lambda x: abs(x) <= tol)
+    U = np.hstack([Q1[:,:k1],Q2[:,:N-k1]])
+    invU = np.linalg.inv(U)
+    V = invU@A@U
+    Z = np.zeros((N,N))
+
+    if k1 != 0:
+        Z[:k1,:k1] = np.linalg.inv(V[:k1,:k1])
+
+    return U@Z@invU
+    

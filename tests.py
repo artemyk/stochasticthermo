@@ -96,5 +96,11 @@ class TestRB(unittest.TestCase):
 		assert(len(c)==1)
 		assert(c[0]==[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0] or c[0]==[0, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0])
 
+
+	def test_darzin_inverse(self):
+		X = st.get_drazin_inverse(np.array([[1,2,0],[5,1,3],[0,0,0]]))
+		assert(np.allclose(X, np.array([[-1/9,2/9,-4/27],[5/9,-1/9,11/27],[0,0,0]])))
+
+
 if __name__ == '__main__': 
     unittest.main() 
