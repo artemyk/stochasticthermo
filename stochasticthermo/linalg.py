@@ -79,7 +79,7 @@ def numerical_radius(A):
     obj = cp.lambda_min(M)
     
     prob = cp.Problem(-cp.Maximize(obj))
-    return prob.solve()
+    return prob.solve(solver=cp.CLARABEL)
 
 
 

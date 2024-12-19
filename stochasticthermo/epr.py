@@ -76,6 +76,8 @@ def get_epr_ex_ons(W,p, S=None):
 _get_epr_ex_ig_cache = {}
 
 def get_epr_ex_ig(W, p, return_optimal_potential=False, cache=False): 
+    # !TODO! Convert to torch LBGFS optimization, its probably much faster.
+    # 
     # Calculate excess EP rate based on information-geometric projection
     # W is rate matrix, p is distribution over states p(x)
     # Here we solve the dual problem (Legendre transform)
@@ -119,7 +121,7 @@ def get_epr_ex_ig(W, p, return_optimal_potential=False, cache=False):
     if cache and N not in _get_epr_ex_ig_cache:
         _get_epr_ex_ig_cache[N] = (obj, x, fluxes, prob)
 
-    prob.solve() # solver=cp.CLARABEL, max_iter=1500) 
+    prob.solve(solver=cp.CLARABEL ) # , max_iter=1500) 
 
     if return_optimal_potential:
         return obj.value, x.value
@@ -129,6 +131,8 @@ def get_epr_ex_ig(W, p, return_optimal_potential=False, cache=False):
     
     
 def get_epr_ex_ig2(W,p, return_optimal_potential=False): 
+    # !TODO! Convert to torch LBGFS optimization, its probably much faster.
+    # 
     # Calculate excess EP rate based on information-geometric projection
     # W is rate matrix, p is distribution over states p(x)
     # Here we solve the primal problem
@@ -156,7 +160,7 @@ def get_epr_ex_ig2(W,p, return_optimal_potential=False):
                 obj += cp.kl_div(x[i,j], fluxes[j,i])
             
     prob = cp.Problem(cp.Minimize(obj), [c[i] == dp[i] for i in range(N)] + f)
-    prob.solve() # solver=cp.CLARABEL, max_iter=500)
+    prob.solve(solver=cp.CLARABEL) # , max_iter=500)
     
     if return_optimal_potential:
         return obj.value, x.value
