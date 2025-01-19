@@ -11,12 +11,19 @@ def is_valid_ratematrix(W):
     assert(np.all(diags<=0))          # diagonals are negative
     assert(np.all(W>=np.diag(diags))) # off diagonals are positive
     assert(near_zero(W.sum(axis=0)))
+    return True
+
+def is_valid_transitionmatrix(T):
+    assert(np.allclose(T.sum(axis=0),1))
+    return True
+
 
 def is_valid_probability(p):
     assert(np.all(p>=0))
     assert(np.isclose(np.sum(p),1))
+    return True
 
-def get_stationary(W, checks=True):
+def get_stationary(W, checks=True, is_transition=False):
     """
     Get stationary distribution of rate matrix W. 
 
@@ -26,11 +33,18 @@ def get_stationary(W, checks=True):
         rate matrix, W[i,j] is transition rate from j->i
     checks : bool
         perform sanity checks on W and stationary state. E.g., checks null vector is unique
+    is_transition : bool
+        W is a stochastic transition matrix , not a rate matrix 
     """ 
 
     if checks:
-        is_valid_ratematrix(W)
+        if is_transition:
+            is_valid_transitionmatrix(W)
+        else:
+            is_valid_ratematrix(W)
 
+    if is_transition:
+        W = W - np.eye(W.shape[0])
 
     N = null_space_qr(W)
     if checks and N.shape[1] != 1:
@@ -78,6 +92,32 @@ def get_random_ratematrix(N, density=1, p_st=None, exp=1):
     np.fill_diagonal(W,0)
     W  -= np.diag(W.sum(axis=0))
     return W
+
+
+def get_random_transitionmatrix(N, density=1, p_st=None, exp=1):
+    """
+    Generate random transition matrix. 
+    
+    Parameters
+    ----------
+    N    : int
+        number of states
+    density : float (default 1)
+        percentage of edges to fill in
+    exp  : float (default 1)
+        parameter to make distribution fatter tailed
+    """
+
+    T = np.random.random((N,N))**exp  # make distribution fatter tailed
+    if density != 1:
+        mask = (np.random.random((N,N))<density).astype('float')
+        T = T*mask
+
+    T = T / T.sum(axis=0)
+
+    return T
+
+
 
 
 def get_fluxes(W, p=None, checks=True):

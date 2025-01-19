@@ -11,6 +11,14 @@ class TestRB(unittest.TestCase):
 
 		assert(np.allclose(p_st, np.array([2./3., 1./3.])))
 
+	def test_get_stationary_transition(self):
+		N = 10
+		W = st.get_random_ratematrix(N)
+		T = np.eye(10) + W/np.max(W)
+
+		p_st = st.get_stationary(T, is_transition=True)
+		assert(np.allclose(p_st, T@p_st))
+		st.is_valid_probability(p_st)
 
 	def test_get_random_ratematrices(self):
 		W = st.get_random_ratematrix(N=10)
