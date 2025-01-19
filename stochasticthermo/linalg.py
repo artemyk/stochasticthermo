@@ -2,7 +2,7 @@ import numpy as np
 import scipy.linalg
 
 
-def get_nth_eigs(A, n=0, checks=False):
+def get_nth_eigs(A, n=1, checks=False):
     """
     Returns n-th eigenvalue and eigenvectors of matrix A
     (sorted in ascending order by real part)
