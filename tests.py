@@ -11,6 +11,16 @@ class TestRB(unittest.TestCase):
 
 		assert(np.allclose(p_st, np.array([2./3., 1./3.])))
 
+	def test_get_EPR_ratematrix(self):
+		W = st.get_random_ratematrix(N=10)
+		p_st = st.get_stationary(W)
+		st.get_epr(W, p_st)
+
+	def test_get_EPR_transitionmatrix(self):
+		W = st.get_random_transitionmatrix(N=10)
+		p_st = st.get_stationary(W, is_transition=True)
+		st.get_epr(W, p_st, is_transition=True)
+
 	def test_get_stationary_transition(self):
 		N = 10
 		W = st.get_random_ratematrix(N)

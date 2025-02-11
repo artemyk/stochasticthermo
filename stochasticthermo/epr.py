@@ -1,11 +1,14 @@
 import numpy as np
-from .ratematrix import get_stationary, is_valid_ratematrix, is_valid_probability
+from .ratematrix import get_stationary, is_valid_ratematrix, is_valid_transitionmatrix, is_valid_probability
 
-def get_epr(W,p,checks=True): 
+def get_epr(W,p,checks=True, is_transition=False): 
     # get entropy production rate incurred by rate matrix W on distribution p
     if checks:
-        is_valid_ratematrix(W)
         is_valid_probability(p)
+        if is_transition:
+            is_valid_transitionmatrix(W)
+        else:
+            is_valid_ratematrix(W)
 
     N   = len(p)
     fluxes = W*p[None,:]
