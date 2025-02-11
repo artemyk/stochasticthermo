@@ -70,7 +70,7 @@ def get_stationary(W, checks=True, is_transition=False):
     return p_st
 
 
-def get_random_ratematrix(N, density=1, p_st=None, exp=1):
+def get_random_ratematrix(N, density=1, exp=1):
     """
     Generate random rate matrix. 
     
@@ -94,7 +94,7 @@ def get_random_ratematrix(N, density=1, p_st=None, exp=1):
     return W
 
 
-def get_random_transitionmatrix(N, density=1, p_st=None, exp=1):
+def get_random_transitionmatrix(N, density=1, exp=1):
     """
     Generate random transition matrix. 
     

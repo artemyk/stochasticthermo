@@ -32,14 +32,14 @@ class TestRB(unittest.TestCase):
 		W = st.get_1D_ratematrix([1,2,3],[2.1,.2,.4])
 		
 
-	def test_get_random_ratematrices_with_stationary(self):
+	# def test_get_random_ratematrices_with_stationary(self):
 
-		W2 = np.array([[-1, 2,  1], 
-			           [1,-3,  1], 
-			           [0, 1, -2]])
-		p_st2 = st.get_stationary(W2)
+	# 	W2 = np.array([[-1, 2,  1], 
+	# 		           [1,-3,  1], 
+	# 		           [0, 1, -2]])
+	# 	p_st2 = st.get_stationary(W2)
 
-		W3= st.get_random_ratematrix(N=3, p_st=p_st2)
+	# 	W3= st.get_random_ratematrix(N=3, p_st=p_st2)
 
 	def test_get_unicyclic(self):
 		st.get_unicyclic_ratematrix([1,2,3],[2,3,5])
