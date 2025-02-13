@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name    = "stochasticthermo"
+version = "1.1"
+authors = [
+    {name = "Artemy Kolchinsky", email = "artemyk@gmail.com"},
+]
+description = "Stochastic thermodynamics in Python"
+readme      = "README.rst"
+requires-python = ">=3.8"
+license     = {text = "MIT"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+dependencies = ['numpy','scipy','cvxpy']
+
