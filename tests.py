@@ -65,6 +65,18 @@ class TestRB(unittest.TestCase):
 		max_ev = np.abs(np.linalg.eigvals(A)).max()
 		assert(np.isclose(max_ev, st.numerical_radius(A)))
 
+		A = A-A.T
+		max_ev = np.abs(np.linalg.eigvals(A)).max()
+		assert(np.isclose(max_ev, st.numerical_radius(A)))
+
+		A = np.random.random((N,N)) + np.random.random((N,N))*1j
+		A = A+A.conj().T
+		max_ev = np.abs(np.linalg.eigvals(A)).max()
+		assert(np.isclose(max_ev, st.numerical_radius(A)))
+
+		A = np.array([[1/2, 3],[0,-2]])
+		assert(np.isclose(np.round(st.numerical_radius(A),2),2.70))
+
 
 	def test_eigenvalues(self):
 		# Test eigenvalue code
