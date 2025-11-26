@@ -83,7 +83,7 @@ def numerical_radius(A):
 
 
 
-def null_space_qr(A, tol=1e-12):
+def null_space_qr(A, tol=1e-10):
     Q, R = scipy.linalg.qr(A.T, mode='economic')
     
     # Determine the rank of A using the diagonal of R

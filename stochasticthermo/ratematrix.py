@@ -47,9 +47,10 @@ def get_stationary(W, checks=True, is_transition=False):
         W = W - np.eye(W.shape[0])
 
     N = null_space_qr(W)
+    assert N.shape[1] >= 1, "No steady state found"
     if checks and N.shape[1] != 1:
         rnk = N.shape[1]
-        raise Exception(f'rank of null space not 1. {rnk}')
+        raise Exception(f'rank of null space not 1. rank={rnk}')
             
     p_st        = N.flatten()
 
@@ -285,6 +286,7 @@ def get_random_1D_ratematrix(N, p=1.0, g=1.0):
 
 
 from scipy.optimize import linprog
+
 
 def get_wasserstein1_speed_primal(R, dp):
     # Ensure the rate matrix R is valid and dp sums close to zero

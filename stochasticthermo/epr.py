@@ -131,7 +131,124 @@ def get_epr_ex_ig(W, p, return_optimal_potential=False, cache=False):
     else:
         return obj.value
 
+def get_TSL_flow(W,p):
+    import cvxpy as cp
+
+    # Stoichiometric matrix
+    S = []
+    fluxes = []
+    n = W.shape[0]
     
+    idxs = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j and not np.isclose(W[i, j], 0):
+                r = np.zeros(n)
+                r[i]=1
+                r[j]=-1
+                S.append(r)
+                idxs[(i,j)] = len(fluxes)
+                fluxes.append(p[j]*W[i,j])
+                
+    S = np.array(S)
+    fluxes = np.array(fluxes)
+    # Build undirected edge list
+    pairs = []
+    edge_idx = {}
+    for (i,j) in idxs:
+        if (j,i) in idxs and (j,i) not in edge_idx:
+            edge_idx[(i,j)] = len(pairs)
+            pairs.append((i,j))
+
+    E = len(pairs)
+    # Incidence B (n x E)
+    B = np.zeros((n, E))
+    for k, (i,j) in enumerate(pairs):
+        B[i, k] = 1.0
+        B[j, k] = -1.0
+
+    d = S.T @ fluxes                     # node imbalances of original fluxes
+    Btot = fluxes.sum()
+
+    # LP: min ||z||_1 s.t. B z = d
+    z = cp.Variable(E)
+    t = cp.Variable(E, nonneg=True)
+    constraints = [B @ z == d, -t <= z, z <= t]
+    lp = cp.Problem(cp.Minimize(cp.sum(t)), constraints)
+    lp.solve(solver=cp.CLARABEL)
+
+    Lstar = t.value.sum()
+    rho = Lstar / Btot
+    rstar = (1 + rho) / (1 - rho) if rho < 1 else np.inf    # rho<1 in feasible cases
+    # reconstruct b*
+    b = np.zeros(len(fluxes))
+    for (i,j), k in edge_idx.items():
+        zij = z.value[k]
+        if zij >= 0:
+            b[idxs[(i,j)]] = rstar/(rstar-1) * zij
+            b[idxs[(j,i)]] = 1/(rstar-1) * zij
+        else:
+            zij = -zij
+            b[idxs[(i,j)]] = 1/(rstar-1) * zij
+            b[idxs[(j,i)]] = rstar/(rstar-1) * zij
+    print(lp.status, np.log(rstar)*lp.value)
+    return Btot
+    
+def get_info_TSL(W, p, version=1):
+    import cvxpy as cp
+
+    # Stoichiometric matrix
+    S = []
+    fluxes = []
+    n = W.shape[0]
+    
+    idxs = {}
+    for i in range(n):
+        for j in range(n):
+            if i != j and not np.isclose(W[i, j], 0):
+                r = np.zeros(n)
+                r[i]=1
+                r[j]=-1
+                S.append(r)
+                idxs[(i,j)] = len(fluxes)
+                fluxes.append(p[j]*W[i,j])
+                
+    S = np.array(S)
+    fluxes = np.array(fluxes)
+
+    m = len(fluxes)
+    b = cp.Variable(m, nonneg=True)
+    constraints = [  cp.sum(b) <= fluxes.sum(), S.T @ b == S.T @ fluxes, ]
+    eps = 1e-30
+    if version == 1:
+        a = cp.Variable(m, nonneg=True)
+        constraints.append( S.T @ a == -S.T @ b )
+        objective = cp.sum(cp.kl_div(a + eps, b + eps))
+    else:
+        objective = 0
+        for i in range(n):
+            for j in range(n):
+                if (j,i) in idxs:
+                    objective += cp.kl_div(b[idxs[(j,i)]] + eps, b[idxs[(i,j)]] + eps)
+
+    prob = cp.Problem(cp.Minimize(objective), constraints)
+    prob.solve(verbose=False, solver=cp.CLARABEL)
+
+
+    #print("status:", prob.status)
+    #print("optimal D:", prob.value)
+    #print("b*:", b.value)
+    print(cp.sum(b).value, fluxes.sum())
+
+    W_opt = np.zeros((n,n))
+    for i in range(n):
+        for j in range(n):
+            if (i,j) in idxs:
+                W_opt[i,j] = b.value[idxs[(i,j)]] / p[j]
+                W_opt[j,j] -= W_opt[i,j]
+    return prob.value, W_opt
+
+
     
 def get_epr_ex_ig2(W,p, return_optimal_potential=False): 
     # !TODO! Convert to torch LBGFS optimization, its probably much faster.
@@ -170,4 +287,3 @@ def get_epr_ex_ig2(W,p, return_optimal_potential=False):
     else:
         return obj.value    
     
-
