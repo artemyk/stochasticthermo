@@ -14,6 +14,8 @@ def is_valid_ratematrix(W):
     return True
 
 def is_valid_transitionmatrix(T):
+    assert(np.all(np.isfinite(T)))
+    assert(np.all(T >= -1e-12))
     assert(np.allclose(T.sum(axis=0),1))
     return True
 
@@ -114,6 +116,10 @@ def get_random_transitionmatrix(N, density=1, exp=1):
         mask = (np.random.random((N,N))<density).astype('float')
         T = T*mask
 
+    empty_cols = np.isclose(T.sum(axis=0), 0)
+    if np.any(empty_cols):
+        T[np.arange(N)[empty_cols], np.arange(N)[empty_cols]] = 1.0
+
     T = T / T.sum(axis=0)
 
     return T
@@ -186,6 +192,12 @@ def get_unicyclic_ratematrix(forward_rates, backward_rates):
     assert(N == len(backward_rates))
     assert(np.min(forward_rates) >= 0 and np.min(backward_rates)>=0)
     W = np.zeros((N,N))
+    if N == 2:
+        W[1,0] = forward_rates[0] + backward_rates[0]
+        W[0,1] = forward_rates[1] + backward_rates[1]
+        W[0,0] = -W[1,0]
+        W[1,1] = -W[0,1]
+        return W
     for i in range(N):
         W[(i+1)%N,i] = forward_rates[i]
         W[(i-1)%N,i] = backward_rates[i]
@@ -240,14 +252,15 @@ def get_random_birthdeath_ratematrix(N, p=1.0, g=1.0, **kwargs):
 
 def get_1D_ratematrix(forward_rates, backward_rates):
     """
-    Generate rate matrix representing 1D random walk
+    Generate a rate matrix for a 1D open chain with an absorbing right boundary.
 
     Parameters
     ----------
     forward_rates : np.array of floats
-        forward rates i->i+1  for i=0 to N
+        forward rates i->i+1
     backward_rates : np.array of floats
-        backward rates i->i-1 for i=1 to N+1
+        backward rates i->i-1 for the non-boundary states
+        The final state has no outgoing backward transition, so it is absorbing.
 
     Returns
     -------
@@ -268,7 +281,7 @@ def get_1D_ratematrix(forward_rates, backward_rates):
 
 def get_random_1D_ratematrix(N, p=1.0, g=1.0):
     """
-    Generate random 1D random walk rate matrix
+    Generate a random 1D open-chain rate matrix with an absorbing right boundary.
 
     Parameters
     ----------

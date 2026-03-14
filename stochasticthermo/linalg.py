@@ -33,7 +33,7 @@ def get_nth_eigs(A, n=0, checks=False):
     rr = v[:,ix] / np.linalg.norm(v[:,ix])
     ev = d[ix]
 
-    if False: # do checks
+    if checks:
         assert(np.allclose((ll@A), np.conj(ev)*ll))
         assert(np.allclose((A@rr), ev*rr))
 
@@ -84,7 +84,7 @@ def numerical_radius(A):
 
 
 def null_space_qr(A, tol=1e-10):
-    Q, R = scipy.linalg.qr(A.T, mode='economic')
+    Q, R = scipy.linalg.qr(A.T, mode='full')
     
     # Determine the rank of A using the diagonal of R
     rank = np.sum(np.abs(np.diag(R)) > tol)
